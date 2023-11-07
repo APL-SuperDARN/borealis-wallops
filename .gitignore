@@ -43,3 +43,21 @@
 bin/
 build/
 *.dat
+
+# Ignore tar.gz files
+*.tar.gz*
+
+# Ignore specific directories
+borealis_env3.9/
+cppzmq/
+libsodium-stable/
+libzmq/
+ntp-4.2.8p13/
+protobuf/
+uhd/
+
+# Ignore specific files
+borealisscreenrc
+hdw.dat.wal
+install_log.txt
+
