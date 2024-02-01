@@ -232,7 +232,12 @@ screenrc_file = os.environ['BOREALISPATH'] + "/borealisscreenrc"
 with open(screenrc_file, 'w') as f:
     f.write(screenrc)
 
-sp.call("rm -r /dev/shm/*", shell=True)
+#sp.call("rm -r /dev/shm/*", shell=True)
+
+shm_path = '/dev/shm/'
+
+# Use os.path.join to ensure a correct path for the rm command
+sp.call("rm -r {}".format(os.path.join(shm_path, '*')), shell=True)
 sp.call("screen -X -S borealis quit", shell=True)
 
 # Give the os a chance to free all previously used sockets, etc.

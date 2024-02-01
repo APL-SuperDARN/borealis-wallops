@@ -20,11 +20,36 @@ import argparse
 import os
 import sys
 import json
-from datetime import datetime as dt
+from datetime import timezone, timedelta, datetime as dt
 import glob
 import subprocess
 import time
 
+def send_email(last_data_write):
+    # Define email parameters
+    recipient_email = 'jordan.wiker@jhuapl.edu'
+    subject = 'Borealis Check'
+
+    # Format time since last data write
+    time_since_last_write = timedelta(seconds=last_data_write)
+    if time_since_last_write > timedelta(days=1):
+        time_str = '{} days'.format(time_since_last_write.days)
+    elif time_since_last_write.seconds >= 3600:
+        hours = time_since_last_write.seconds // 3600
+        time_str = '{} hours'.format(hours)
+    else:
+        minutes = time_since_last_write.seconds // 60
+        time_str = '{} minutes'.format(minutes) if minutes > 0 else '{} seconds'.format(time_since_last_write.seconds)
+
+    message = 'Borealis hasn\'t written new data in {}'.format(time_str)
+    attachment_path = '/home/radar/logs/restart_borealis.log'
+
+    # Construct the command
+    #cmd = 'echo "{}" | mail -s "{}" -A "{}" "{}"'.format(message, subject, attachment_path, recipient_email)
+    cmd = 'echo "{}" | mail -s "{}" "{}"'.format(message, subject, recipient_email)
+
+    # Call the command using subprocess
+    subprocess.call(cmd, shell=True, stdin=open(os.devnull, 'r'))
 
 def get_args():
     """
@@ -67,12 +92,16 @@ if __name__ == "__main__":
     today = dt.utcnow().strftime("%Y%m%d")
     today_data_files = glob.glob("{}/{}/*".format(data_directory, today))
     # If there are no files yet today, then just use the start of the day as the newest file write time
-    if len(today_data_files) is 0:
+    if len(today_data_files) == 0:
         new_file_write_time = dt.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         new_file_write_time = float(new_file_write_time.strftime("%s"))
     else:
         newest_file = max(today_data_files, key=os.path.getmtime)
         new_file_write_time = os.path.getmtime(newest_file)
+
+    new_file_write_time = dt.utcfromtimestamp(new_file_write_time).replace(tzinfo=timezone.utc).astimezone(timezone.utc)
+    new_file_write_time = float(new_file_write_time.strftime("%s"))
+
     now_utc_seconds = float(dt.utcnow().strftime("%s"))
 
     # How many seconds ago was the last write to a data file?
@@ -87,6 +116,8 @@ if __name__ == "__main__":
     if float(last_data_write) <= float(restart_after_seconds):
         sys.exit(0)
     else:
+        send_email(last_data_write) 
+
         # Now we attempt to restart Borealis
         stop_borealis = subprocess.Popen("{}/stop_radar.sh".format(borealis_path),
                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -97,9 +128,26 @@ if __name__ == "__main__":
 
         time.sleep(5)
 
+        # TODO: Remove after scheduling is working
+        script_directory = '/home/radar/borealis'
+        os.chdir(script_directory)
+
+        start_command = ['./steamed_hams.py', 'normalscan_low_bw', 'release', 'common']
+        process = subprocess.Popen(start_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+
+        # Print the output
+        print("Standard Output:")
+        print(stdout.decode())
+
+        # Print any errors
+        if stderr:
+            print("Errors:")
+            print(stderr.decode())
+
         # Now call the start radar script, reads will block, so no need to communicate with
         # this process.
-        start_borealis = subprocess.Popen("{}/start_radar.sh".format(borealis_path),
-                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print('Borealis stop_radar.sh and start_radar.sh called')
+        #start_borealis = subprocess.Popen("{}/start_radar.sh".format(borealis_path),
+        #                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # print('Borealis stop_radar.sh and start_radar.sh called')
         sys.exit(0)
