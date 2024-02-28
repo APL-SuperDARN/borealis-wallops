@@ -113,6 +113,7 @@ def easy_scanbound(intt, beams):
 # TODO: Set these frequencies
 if opts.site_id == "wal":
     SOUNDING_FREQS = [9690, 10500, 11000, 11700, 12400, 12900, 13150]
+    ECLIPSE_FREQS  = [10000, 11000, 12000, 13000, 14000]
 elif opts.site_id == "sas":
     SOUNDING_FREQS = [9690, 10500, 11000, 11700, 12400, 12900, 13150]
 elif opts.site_id == "pgr":
