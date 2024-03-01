@@ -1,6 +1,6 @@
 # Restricted frequency table for Wallops
 default=11110
-0000  8970     # no transmissions below 9 MHz
+0000 8970     # no transmissions below 9 MHz
 9965 10180     # 10 MHz time signal
 11245 11430     # Air Emergency band
 13230 13440     # Second Air Emergency Band and Radio Astronomy Band
