@@ -1,4 +1,10 @@
 # Restricted frequency table for Wallops
-default=13700
-# TODO: Are there any frequencies we need to add?
-# E.g. 14990 15010
+default=11110
+0000 8970     # no transmissions below 9 MHz
+9965 10180     # 10 MHz time signal
+11245 11430     # Air Emergency band
+13230 13440     # Second Air Emergency Band and Radio Astronomy Band
+13970 14380     # Amature Radar and Satellite Band
+14640 14700     # Canadian Time Signal at 14670
+14960 15040     # US Time Signals
+17870 99999     # no transmissions above 17870

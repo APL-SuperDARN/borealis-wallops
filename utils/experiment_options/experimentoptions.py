@@ -184,9 +184,11 @@ class ExperimentOptions:
 
         self.__restricted_ranges = []
         for line in restricted:
+            line = line.strip()  # Remove leading and trailing whitespace
+            line = line.split('#', 1)[0].strip()  # Remove everything after '#', including '#'
             splitup = line.split()
             if len(splitup) != 2:
-                raise Exception('Problem with Restricted Frequency: A Range Len != 2')
+                raise Exception('Problem with Restricted Frequency: A Range Len != 2\nProblematic line: {}\nSplit values: {}'.format(line, splitup))                
             try:
                 splitup = [int(float(freq)) for freq in splitup]  # convert to ints
             except ValueError:

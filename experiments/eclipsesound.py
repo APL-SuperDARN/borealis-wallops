@@ -1,10 +1,7 @@
 #!/usr/bin/python3
 
-#Copyright SuperDARN Canada 2021
-
 import os
 import sys
-import copy
 
 BOREALISPATH = os.environ['BOREALISPATH']
 sys.path.append(BOREALISPATH)
@@ -12,23 +9,21 @@ sys.path.append(BOREALISPATH)
 from experiment_prototype.experiment_prototype import ExperimentPrototype
 import experiments.superdarn_common_fields as scf
 
-class NormalSound(ExperimentPrototype):
-    """NormalSound is a modified version of normalscan with added frequency sounding.
-
+class EclipseSound(ExperimentPrototype):
+    """EclipseSound is a modified version of InterleaveSound developed for Wallops
+    to observe the 2024-04-08 eclipse. During the first 30 seconds we sweep through 
+    every other beam, and during the remaining 30 seconds we step through 5 frequencies
+    on 4 beams.
     """
     def __init__(self):
-        cpid = 157
+        cpid = 1048
 
-        sounding_beams = [0,2,4,6,8,10,12,14,16,18,20,22,1,3,5,7,9,11,13,15,17,19,21,23]
-
-        if scf.IS_FORWARD_RADAR:
-            beams_to_use = scf.STD_24_FORWARD_BEAM_ORDER
-        else:
-            beams_to_use = scf.STD_24_REVERSE_BEAM_ORDER
+        beams_to_use    = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23]
+        sounding_beams  = [0, 7, 15, 23]
 
         slices = []
         
-        common_scanbound_spacing = 2.0 # seconds
+        common_scanbound_spacing = 2.5  # seconds
         common_intt_ms = common_scanbound_spacing * 1.0e3 - 100  # reduce by 100 ms for processing
 
         slices.append({  # slice_id = 0, the first slice
@@ -43,21 +38,20 @@ class NormalSound(ExperimentPrototype):
             "tx_beam_order": beams_to_use,
             # this scanbound will be aligned because len(beam_order) = len(scanbound)
             "scanbound" : [i * common_scanbound_spacing for i in range(len(beams_to_use))],
-            "freq" : scf.COMMON_MODE_FREQ_1, #kHz
+            "freq" : scf.COMMON_MODE_FREQ_1, # kHz
             "acf": True,
             "xcf": True,  # cross-correlation processing
             "acfint": True,  # interferometer acfs
-            "lag_table": scf.STD_8P_LAG_TABLE, # lag table needed for 8P since not all lags used.
+            "lag_table": scf.STD_8P_LAG_TABLE,  # lag table needed for 8P since not all lags used.
         })
 
-        sounding_scanbound_spacing = 1.5 # seconds
+        sounding_scanbound_spacing = 1.5  # seconds
         sounding_intt_ms = sounding_scanbound_spacing * 1.0e3 - 250
-        
-        freqrange = (max(scf.SOUNDING_FREQS) - min(scf.SOUNDING_FREQS)) / 2
-        centerfreq = min(scf.SOUNDING_FREQS) + freqrange
 
-        sounding_scanbound = [48 + i * sounding_scanbound_spacing for i in range(8)]
-        for num, freq in enumerate(scf.SOUNDING_FREQS):
+        sounding_scanbound = [30 + i * sounding_scanbound_spacing for i in range(20)]
+
+        # ECLIPSE_FREQS  = [10000, 11000, 12000, 13000, 14000]
+        for freq in scf.ECLIPSE_FREQS:
             slices.append({
                 "pulse_sequence": scf.SEQUENCE_8P,
                 "tau_spacing": scf.TAU_SPACING_8P,
@@ -69,17 +63,23 @@ class NormalSound(ExperimentPrototype):
                 "rx_beam_order": sounding_beams,
                 "tx_beam_order": sounding_beams,
                 "scanbound" : sounding_scanbound,
-                "freq" : freq,
+                "freq": freq,
                 "acf": True,
                 "xcf": True,  # cross-correlation processing
                 "acfint": True,  # interferometer acfs
-                "lag_table": scf.STD_8P_LAG_TABLE, # lag table needed for 8P since not all lags used.
+                "lag_table": scf.STD_8P_LAG_TABLE,  # lag table needed for 8P since not all lags used
                 })
 
-        super(NormalSound, self).__init__(cpid, txctrfreq=centerfreq, rxctrfreq=centerfreq, comment_string=NormalSound.__doc__)
+        sum_of_freq = 0
+        for slice in slices:
+            sum_of_freq += slice['freq']  # kHz, oscillator mixer frequency on the USRP for TX
+        rxctrfreq = txctrfreq = int(sum_of_freq / len(slices))
+
+        super(EclipseSound, self).__init__(cpid, txctrfreq=txctrfreq, rxctrfreq=rxctrfreq,
+                                              comment_string=EclipseSound.__doc__)
 
         self.add_slice(slices[0])
-        self.add_slice(slices[1], {0:'SCAN'})
-        for slice_num in range(2,len(slices)):
-            self.add_slice(slices[slice_num], {1:'AVEPERIOD'})
+        self.add_slice(slices[1], {0: 'SCAN'})
+        for slice_num in range(2, len(slices)):
+            self.add_slice(slices[slice_num], {1: 'AVEPERIOD'})
 
