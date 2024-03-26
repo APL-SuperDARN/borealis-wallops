@@ -132,7 +132,7 @@ if __name__ == "__main__":
         script_directory = '/home/radar/borealis'
         os.chdir(script_directory)
 
-        start_command = ['./steamed_hams.py', 'normalscan', 'release', 'common']
+        start_command = ['./steamed_hams.py', 'eclipsesound', 'release', 'common']
         process = subprocess.Popen(start_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
 
