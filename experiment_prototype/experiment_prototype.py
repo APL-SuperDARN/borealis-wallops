@@ -305,7 +305,7 @@ therefore ignored.
 
 possible_averaging_methods = frozenset(['mean', 'median'])
 possible_scheduling_modes = frozenset(['common', 'special', 'discretionary'])
-default_rx_bandwidth = 5.0e6
+default_rx_bandwidth = 500e3
 default_output_rx_rate = 10.0e3/3
 transition_bandwidth = 37500.0
 

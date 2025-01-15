@@ -132,9 +132,10 @@ def easy_widebeam(frequency_khz, tx_antennas, antenna_spacing_m):
     Returns phases in degrees for each antenna in the main array that will generate a wide beam pattern
     that illuminates the full FOV. Only 8 or 16 antennas at common frequencies are supported.
     """
-    if antenna_spacing_m != 15.24:
-        raise ValueError("Antenna spacing must be 15.24m. Given value: {}".format(antenna_spacing_m))
-
+    cached_values_wallops = {
+        12000: [0., -174.49582045, -296.97538485, -349.17812891, -453.66699164, -531.87074475, -633.33768634, -587.90811412, 
+                -587.90811412, -633.33768634, -531.87074475, -453.66699164, -349.17812891, -296.97538485, -174.49582045, 0.],
+    }
     cached_values_16_antennas = {
         10400: [0., 33.21168501, 63.39856497, 133.51815213, 232.59694556, 287.65482653, 299.43588532, 313.30394893,
                 313.30394893, 299.43588532, 287.65482653, 232.59694556, 133.51815213, 63.39856497, 33.21168501, 0.],
@@ -148,8 +149,6 @@ def easy_widebeam(frequency_khz, tx_antennas, antenna_spacing_m):
                 311.23785241, 299.53525025, 289.01436937, 232.17488475, 137.23017826, 63.56879316, 33.13909903, 0.],
         10900: [0., 33.15305158, 63.55105706, 137.93590292, 232.13550152, 289.46328775, 299.78227805, 310.57614029,
                 310.57614029, 299.78227805, 289.46328775, 232.13550152, 137.93590292, 63.55105706, 33.15305158, 0.],
-        12000: [0., -174.49582045, -296.97538485, -349.17812891, -453.66699164, -531.87074475, -633.33768634, -587.90811412, 
-                -587.90811412, -633.33768634, -531.87074475, -453.66699164, -349.17812891, -296.97538485, -174.49582045, 0.],
         12200: [0., 70.91038811, 122.60927618, 214.92179098, 276.38784179, 325.25390655, 351.3873793, 316.5693829,
                 316.5693829, 351.3873793, 325.25390655, 276.38784179, 214.92179098, 122.60927618, 70.91038811, 0.],
         12300: [0., 71.78224973, 124.29124213, 215.26781585, 277.84490172, 326.57004062, 353.22972278, 318.83181539,
@@ -180,10 +179,18 @@ def easy_widebeam(frequency_khz, tx_antennas, antenna_spacing_m):
     num_antennas = opts.main_antenna_count
     phases = np.zeros(num_antennas, dtype=np.complex64)
     if len(tx_antennas) == 16:
-        if frequency_khz in cached_values_16_antennas.keys():
-            phases[tx_antennas] = np.exp(1j * np.pi/180. * np.array(cached_values_16_antennas[frequency_khz]))
+        if antenna_spacing_m == 15.24:
+            cached_values = cached_values_16_antennas
+        elif antenna_spacing_m == 12.8016:
+            cached_values = cached_values_wallops
+        else:
+            raise ValueError(f"Unsupported antenna spacing {antenna_spacing_m} meters. Supported values are 12.8016 and 15.24")
+        if frequency_khz in cached_values.keys():
+            phases[tx_antennas] = np.exp(1j * np.pi/180. * np.array(cached_values[frequency_khz]))
             return phases.reshape(1, num_antennas)
     elif len(tx_antennas) == 8:
+        if antenna_spacing_m != 15.24:
+            raise ValueError(f"Unsupported antenna spacing {antenna_spacing_m} meters. Supported values are 15.24")
         if frequency_khz in cached_values_8_antennas.keys():
             phases[tx_antennas] = np.exp(1j * np.pi/180. * np.array(cached_values_8_antennas[frequency_khz]))
             return phases.reshape(1, num_antennas)
