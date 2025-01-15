@@ -50,13 +50,13 @@ class FullFOV(ExperimentPrototype):
             "first_range": scf.STD_FIRST_RANGE,
             "intt": scf.INTT_7P_24,  # duration of an integration, in ms
             "beam_angle": scf.STD_24_BEAM_ANGLE,
-            "rx_beam_order": [[i for i in range(num_antennas)]],
+            "rx_beam_order": [scf.STD_24_FORWARD_BEAM_ORDER],
             "tx_beam_order": [0],   # only one pattern
             "tx_antenna_pattern": scf.easy_widebeam,
             "freq": freq,  # kHz
             "acf": True,
             "xcf": True,  # cross-correlation processing
             "acfint": True,  # interferometer acfs
-            "align_sequences": True     # align start of sequence to tenths of a second
+            #"align_sequences": True     # align start of sequence to tenths of a second
         })
 
